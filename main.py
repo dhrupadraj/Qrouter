@@ -6,7 +6,7 @@ from utils.feature_extraction import extract_features
 from utils.metrics import print_metrics
 
 # Teams (actions)
-teams = ["Support", "Billing", "Product"]
+teams = ["Support", "Billing", "Product","Technical"]
 
 # Load email data
 data = pd.read_csv("data/emails.csv")
@@ -59,3 +59,25 @@ for ep in range(episodes):
 agent.save()
 
 print("Training complete. Q-table saved.")
+print("\n=== Email Routing Results ===\n")
+
+for idx, row in data.iterrows():
+    email_text = f"{row['subject']} {row['body']}"
+    true_team = row["true_team"] if "true_team" in data.columns else (
+                row["team"] if "team" in data.columns else "N/A")
+
+    # Extract embedding
+    state = extract_features(email_text)
+
+    # Map embedding → Q-table index
+    s_idx = hash(state.tobytes()) % state_size
+    
+    # Agent picks an action
+    action = agent.choose_action(s_idx)
+    predicted_team = teams[action]
+
+    print(f"Email #{idx+1}")
+    print(f"Subject: {row['subject'][:60]}")
+    print(f"Predicted Team: {predicted_team}")
+    print(f"Actual Team: {true_team}")
+    print("-" * 50)
