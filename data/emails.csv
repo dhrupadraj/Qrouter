@@ -1,6 +1,50 @@
 subject,body,true_team
-Password reset needed,User cannot log in to portal,Support
-New billing issue,Customer charged twice,Billing
-Feature request:Add dark mode,User requests new feature,Product
-Refund request,Customer wants refund,Billing
-Login bug,Authentication failed for user,Support
+Password reset needed,User cannot log in to the portal,Support
+New billing issue,Customer was charged twice for subscription,Billing
+Feature request: Add dark mode,User suggests a new UI feature,Product
+Refund request,Customer requests a refund for last month,Billing
+Login bug,Authentication failed for multiple users,Support
+Payment declined,Customer card not accepted even though valid,Billing
+App crash on startup,Mobile app crashes after update,Technical
+Unable to upload files,File upload fails with error code 500,Technical
+Request for new feature,User wants an export-to-PDF option,Product
+Subscription cancelled by mistake,Customer wants reactivation,Billing
+Two-factor authentication not working,User not receiving OTP,Support
+Incorrect invoice amount,Invoice shows wrong total, Billing
+Add new dashboard widgets,Request to add KPI widgets on dashboard,Product
+API timeout,Third-party API calls keep timing out,Technical
+Password expired,User needs password reset link,Support
+Need invoice copy,Customer requesting invoice for last month,Billing
+Request UI customization,User wants compact mode UI,Product
+Server not responding,Backend server down since morning,Technical
+User unable to access account,Account locked due to failed attempts,Support
+Refund wrong amount,Customer received partial refund,Billing
+Add analytics feature,User requesting session analytics,Product
+System slowdown,Application taking too long to load,Technical
+Email verification failed,User cannot verify email,Support
+Tax incorrectly calculated on bill,User flagged incorrect GST amount,Billing
+Export data feature missing,User cannot export CSV,Product
+System throwing 502 errors,Server gateway failure,Technical
+Login page blank,Frontend showing blank screen on login,Support
+Plan upgrade not applied,User paid but upgrade not reflected,Billing
+Request for feature to schedule reports,User wants automation,Product
+Memory leak issue,App memory usage keeps increasing,Technical
+Account locked,User exceeded login attempts,Support
+Invoice not received,Customer didn’t get monthly invoice,Billing
+Add multi-language support,User wants Hindi language support,Product
+Database connection failure,DB server unreachable during peak hours,Technical
+OTP not delivered,User unable to complete login,Support
+Duplicate transaction detected,Customer charged two times,Billing
+Add AI-based suggestions,Feature request for smart recommendations,Product
+High CPU usage,Server CPU spikes reaching 95%,Technical
+Profile update error,User unable to update profile information,Support
+Refund pending,Customer refund not processed yet,Billing
+Add custom themes,UI theming requested by user,Product
+Network latency high,App slow due to network issues,Technical
+User cannot change email,Email update throws validation error,Support
+Billing cycle incorrect,Customer charged earlier than expected,Billing
+Need new template design,Users want redesigned email templates,Product
+Server crash,Production server crashed at midnight,Technical
+Forgot username,User can't recover account username,Support
+Payment status unclear,Customer unsure if payment succeeded,Billing
+

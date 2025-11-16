@@ -21,7 +21,7 @@ class TicketEnvironment:
     def step(self, action):
         email = self.data.iloc[self.current_idx]
         correct_team = email['true_team']
-        reward = 1 if self.teams[action] == correct_team else -1
+        reward = 10 if self.teams[action] == correct_team else -1
 
         self.current_idx += 1
         done = self.current_idx >= len(self.data)
