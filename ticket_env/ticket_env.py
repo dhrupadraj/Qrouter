@@ -1,30 +1,58 @@
 import numpy as np
+import pandas as pd
 
 class TicketEnvironment:
-    def __init__(self, data, feature_extractor, teams):
-        self.data = data
+    """
+    Environment that yields embeddings (states) for each email, accepts actions (team indices),
+    and returns reward and next_state. This environment is episodic: one episode processes
+    the entire dataset (optionally shuffled each episode).
+    """
+
+    def __init__(self, df: pd.DataFrame, feature_extractor, teams, shuffle=True):
+        """
+        df: DataFrame with columns: 'subject', 'body', 'true_team'
+        feature_extractor: callable(text) -> 1D numpy vector
+        teams: list of team names in order (action indices)
+        """
+        self.original_df = df.reset_index(drop=True)
         self.feature_extractor = feature_extractor
-        self.teams = teams
-        self.current_idx = 0
+        self.teams = list(teams)
+        self.shuffle = shuffle
+        self.reset()
 
     def reset(self):
-        self.current_idx = 0
+        # shuffle the data each episode so agent can't memorize ordering
+        if self.shuffle:
+            self.df = self.original_df.sample(frac=1).reset_index(drop=True)
+        else:
+            self.df = self.original_df.copy()
+        self.i = 0
+        # precompute features to speed up training
+        corpus = (self.df["subject"].fillna("") + " " + self.df["body"].fillna("")).tolist()
+        # If TF-IDF fallback is needed outside extractor, you should have fitted vectorizer externally.
+        self.features = [self.feature_extractor(text) for text in corpus]
         return self._get_state()
 
     def _get_state(self):
-        if self.current_idx >= len(self.data):
+        if self.i >= len(self.df):
             return None
-        email = self.data.iloc[self.current_idx]
-        text = f"{email['subject']} {email['body']}"
-        return self.feature_extractor(text)
+        return self.features[self.i]
 
     def step(self, action):
-        email = self.data.iloc[self.current_idx]
-        correct_team = email['true_team']
-        reward = 10 if self.teams[action] == correct_team else -1
+        """
+        action: integer index of chosen team
+        returns: (next_state, reward, done, info)
+        """
+        if self.i >= len(self.df):
+            return None, 0.0, True, {}
 
-        self.current_idx += 1
-        done = self.current_idx >= len(self.data)
+        true_team = self.df.loc[self.i, "true_team"]
+        predicted_team = self.teams[action] if 0 <= action < len(self.teams) else None
+
+        # reward shaping: strong positive for correct, mild negative for wrong
+        reward = 5.0 if predicted_team == true_team else -1.0
+
+        self.i += 1
+        done = self.i >= len(self.df)
         next_state = self._get_state() if not done else None
-
-        return next_state, reward, done
+        return next_state, reward, done, {"true_team": true_team, "predicted_team": predicted_team}

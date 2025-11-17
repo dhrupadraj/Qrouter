@@ -1,83 +1,140 @@
-import pandas as pd
+import os
+import argparse
 import numpy as np
-from agent.q_agent import QAgent
+import pandas as pd
+from tqdm import trange
+
+from config import *
+from utils.feature_extraction import extract_features, fit_tfidf
 from ticket_env.ticket_env import TicketEnvironment
-from utils.feature_extraction import extract_features
-from utils.metrics import print_metrics
+from agent.dqn_agent import DQNAgent
+from utils.metrics import print_episode_stats, plot_rewards, compute_confusion
 
-# Teams (actions)
-teams = ["Support", "Billing", "Product","Technical"]
+# load data
+def load_data(path):
+    df = pd.read_csv(path)
 
-# Load email data
-data = pd.read_csv("data/emails.csv")
+    if 'subject' not in df.columns or 'body' not in df.columns or 'true_team' not in df.columns:
+        raise ValueError("CSV must contain 'subject', 'body', 'true_team' columns.")
 
-# Environment setup
-env = TicketEnvironment(data, extract_features, teams)
+    df['subject'] = df['subject'].fillna('')
+    df['body'] = df['body'].fillna('')
 
-# Updated state size because we now use embeddings
-# all-MiniLM-L6-v2 → vector size = 384
-state_size = 384
-action_size = len(teams)
+    # FIX: normalize labels
+    df['true_team'] = df['true_team'].astype(str).str.strip()
+    df['true_team'] = df['true_team'].replace({'nan': 'Unknown', 'None': 'Unknown'})
 
-# Q-learning agent
-agent = QAgent(state_size, action_size)
+    return df
 
-# Training loop
-episodes = 50
-for ep in range(episodes):
-    state = env.reset()
-    total_rewards = []
 
-    while state is not None:
-        # For embeddings, using argmax is meaningless — use full vector
-        s_vec = state
+def prepare_feature_extractor(df):
+    # If TF-IDF fallback is needed, fit the vectorizer
+    if not USE_SENTENCE_TRANSFORMERS:
+        corpus = (df['subject'] + ' ' + df['body']).tolist()
+        fit_tfidf(corpus)
+    return
 
-        # Convert vector to index via hashing (to map continuous → discrete)
-        s_idx = hash(s_vec.tobytes()) % state_size
+def train(args):
+    df = load_data(DATA_PATH)
+    teams = sorted(df['true_team'].unique().tolist())
+    env = TicketEnvironment(df, lambda t: extract_features(t, fit_tfidf_if_needed=False), teams, shuffle=True)
 
-        action = agent.choose_action(s_idx)
+    # determine input dimension by extracting first embedding
+    sample_text = df.iloc[0]['subject'] + " " + df.iloc[0]['body']
+    sample_vec = extract_features(sample_text, fit_tfidf_if_needed=False)
+    input_dim = sample_vec.shape[0]
+    n_actions = len(teams)
 
-        next_state, reward, done = env.step(action)
+    agent = DQNAgent(input_dim, n_actions)
+    rewards_log = []
+    losses_log = []
 
-        if next_state is not None:
-            s_next_vec = next_state
-            s_next_idx = hash(s_next_vec.tobytes()) % state_size
-        else:
-            s_next_idx = 0
+    global_step = 0
+    for ep in trange(NUM_EPISODES, desc="Episodes"):
+        state = env.reset()
+        ep_reward = 0.0
+        ep_losses = []
 
-        agent.update(s_idx, action, reward, s_next_idx)
-        total_rewards.append(reward)
+        step = 0
+        while True:
+            action = agent.select_action(state, greedy=False)
+            next_state, reward, done, info = env.step(action)
 
-        if done:
-            break
+            agent.store(state, action, reward, next_state if next_state is not None else None, done)
+            loss = agent.update()
+            if loss:
+                ep_losses.append(loss)
 
-        state = next_state
+            ep_reward += reward
+            global_step += 1
+            step += 1
+            if done or step >= MAX_STEPS_PER_EPISODE:
+                break
+            state = next_state
 
-    print(f"Episode {ep+1}/{episodes}")
-    print_metrics(total_rewards)
+        rewards_log.append(ep_reward)
+        losses_log.append(np.mean(ep_losses) if ep_losses else 0.0)
 
-agent.save()
+        if (ep + 1) % 10 == 0:
+            print_episode_stats(ep + 1, ep_reward, losses_log[-1])
+        # checkpoint periodically
+        if (ep + 1) % 50 == 0:
+            os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
+            agent.save(MODEL_PATH)
 
-print("Training complete. Q-table saved.")
-print("\n=== Email Routing Results ===\n")
+    # final save
+    os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
+    agent.save(MODEL_PATH)
+    plot_rewards(rewards_log)
+    return agent, env, teams
 
-for idx, row in data.iterrows():
-    email_text = f"{row['subject']} {row['body']}"
-    true_team = row["true_team"] if "true_team" in data.columns else (
-                row["team"] if "team" in data.columns else "N/A")
+def evaluate(agent, env, teams, save_csv=True):
+    # run greedy pass over the original dataset
+    df = env.original_df
+    preds = []
+    trues = []
+    for i in range(len(df)):
+        text = df.loc[i, 'subject'] + " " + df.loc[i, 'body']
+        state = extract_features(text, fit_tfidf_if_needed=False)
+        a = agent.select_action(state, greedy=True)
+        preds.append(teams[a])
+        trues.append(df.loc[i, 'true_team'])
+    df_out = df.copy()
+    df_out['predicted_team'] = preds
+    if save_csv:
+        os.makedirs(os.path.dirname(RESULTS_CSV), exist_ok=True)
+        df_out.to_csv(RESULTS_CSV, index=False)
+        print(f"Saved predictions to {RESULTS_CSV}")
 
-    # Extract embedding
-    state = extract_features(email_text)
+    cm, acc = compute_confusion(trues, preds, labels=teams)
+    print("Accuracy:", acc)
+    print("Confusion matrix:")
+    print(cm)
+    return df_out
 
-    # Map embedding → Q-table index
-    s_idx = hash(state.tobytes()) % state_size
-    
-    # Agent picks an action
-    action = agent.choose_action(s_idx)
-    predicted_team = teams[action]
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--train", action="store_true", help="Train DQN")
+    parser.add_argument("--eval", action="store_true", help="Evaluate using saved model")
+    args = parser.parse_args()
 
-    print(f"Email #{idx+1}")
-    print(f"Subject: {row['subject'][:60]}")
-    print(f"Predicted Team: {predicted_team}")
-    print(f"Actual Team: {true_team}")
-    print("-" * 50)
+    # prepare TF-IDF if needed
+    df_all = load_data(DATA_PATH)
+    if not USE_SENTENCE_TRANSFORMERS:
+        prepare_feature_extractor(df_all)
+
+    if args.train:
+        agent, env, teams = train(args)
+    elif args.eval:
+        # load model and evaluate
+        teams = sorted(df_all['true_team'].unique().tolist())
+        sample_text = df_all.iloc[0]['subject'] + " " + df_all.iloc[0]['body']
+        sample_vec = extract_features(sample_text, fit_tfidf_if_needed=False)
+        input_dim = sample_vec.shape[0]
+        n_actions = len(teams)
+        agent = DQNAgent(input_dim, n_actions)
+        agent.load(MODEL_PATH)
+        env = TicketEnvironment(df_all, lambda t: extract_features(t, fit_tfidf_if_needed=False), teams, shuffle=False)
+        evaluate(agent, env, teams, save_csv=True)
+    else:
+        print("Run with --train or --eval")
