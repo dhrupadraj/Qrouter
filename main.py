@@ -6,7 +6,7 @@ import joblib
 from tqdm import trange
 
 from config import *
-from utils.feature_extraction import extract_features, fit_tfidf,TfidfVectorizer
+from utils.feature_extraction import extract_features, fit_tfidf, TfidfVectorizer
 from ticket_env.ticket_env import TicketEnvironment
 from agent.dqn_agent import DQNAgent
 from utils.metrics import print_episode_stats, plot_rewards, compute_confusion
@@ -151,9 +151,6 @@ def load_live_agent():
     """
     Load RL agent + teams for FastAPI or n8n live processing.
     """
-
-    
-
     if os.path.exists("artifacts/teams.pkl"):
         teams = joblib.load("artifacts/teams.pkl")
     else:
@@ -180,7 +177,7 @@ def predict_live_email(subject: str, body: str):
     Used by FastAPI → n8n → Gmail
     """
     text = subject + " " + body
-    emb = extract_features(text,fit_tfidf_if_needed=False)
+    emb = extract_features(text, fit_tfidf_if_needed=False)
 
     agent, teams_list = load_live_agent()
 
@@ -205,7 +202,6 @@ if __name__ == "__main__":
         agent, env, teams = train(args)
 
     elif args.eval:
-        
         teams = sorted(df_all['true_team'].unique().tolist())
 
         sample_text = df_all.iloc[0]['subject'] + " " + df_all.iloc[0]['body']

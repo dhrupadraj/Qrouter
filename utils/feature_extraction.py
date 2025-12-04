@@ -1,7 +1,7 @@
 import re
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
-from config import USE_SENTENCE_TRANSFORMERS, EMBEDDING_MODEL, SEED
+from config import USE_SENTENCE_TRANSFORMERS, EMBEDDING_MODEL
 
 # Lazy imports for sentence-transformers
 _sentence_model = None
