@@ -2,6 +2,8 @@
 
 Automatically classify and route incoming Gmail messages to teams using a DQN Reinforcement Learning model, FastAPI backend, and n8n automation.
 
+Use this link to try out the n8n workflow: http://localhost:5678/workflow/i6lmTGjOVchEVYjm
+
 🚀 Overview
 
 Q-Router is an intelligent email routing system that learns how to classify and assign incoming emails to the correct team (e.g., Billing, Product, Support, Technical) using:
