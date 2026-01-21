@@ -1,0 +1,384 @@
+{
+  "name": "Qrouter",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "480ccc8a-c6a4-4d13-90c9-8426a4852908",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "yhKq0dR5XFd8c4IT",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\n  body:$input.first().json.snippet.toLocaleLowerCase()||\"\",\n  subject: $input.first().json.Subject.toLocaleLowerCase()||\"\",\n  from:$input.first().json.From\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "29dcdb3f-964f-4172-aa9c-7ecaf02f3e27",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8000/predict",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"subject\": \"={{$json.subject}}\",\n  \"body\": \"={{$json.body}}\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "14f62a42-030d-4ac6-af81-ea8be1b93943",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C09UGQ3KJ6A",
+          "mode": "list",
+          "cachedResultName": "technical-team"
+        },
+        "text": "=📧 New Email Routed\n*From:*{{ $('Code in JavaScript').item.json.from }}\n*Subject:* {{ $('Code in JavaScript').item.json.subject }}\n*Body:* {{ $('Code in JavaScript').item.json.body }}\n*Predicted Team:* {{ $('HTTP Request').item.json.team }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        864,
+        -240
+      ],
+      "id": "62e27830-39c0-4e2b-b8c3-ee92204e6371",
+      "name": "Send a message",
+      "webhookId": "d9722500-6aac-47a7-9d37-2b7957e9eaff",
+      "credentials": {
+        "slackApi": {
+          "id": "bjkWJ8RsJsiSs8D7",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C09U38ZBF1V",
+          "mode": "list",
+          "cachedResultName": "support-team"
+        },
+        "text": "=📧 New Email Routed *From:*{{ $('Code in JavaScript').item.json.from }} \n*Subject:* {{ $('Code in JavaScript').item.json.subject }} \n*Body:* {{ $('Code in JavaScript').item.json.body }} \n*Predicted Team:* {{ $('HTTP Request').item.json.team }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        880,
+        -64
+      ],
+      "id": "c1a6e3f5-0b51-4008-bad6-d524d0cc7aed",
+      "name": "Send a message1",
+      "webhookId": "fc7ead55-d726-4e2d-ad62-c17ca56b7d93",
+      "alwaysOutputData": true,
+      "credentials": {
+        "slackApi": {
+          "id": "bjkWJ8RsJsiSs8D7",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C09UFCM2SSZ",
+          "mode": "list",
+          "cachedResultName": "product-team"
+        },
+        "text": "=📧 New Email Routed \n*From:*{{ $('Code in JavaScript').item.json.from }} \n*Subject:* {{ $('Code in JavaScript').item.json.subject }} \n*Body:* {{ $('Code in JavaScript').item.json.body }} \n*Predicted Team:* {{ $('HTTP Request').item.json.team }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        944,
+        96
+      ],
+      "id": "060c25a0-e039-428e-98cc-1257e429692e",
+      "name": "Send a message2",
+      "webhookId": "b84c9195-9240-4bf4-8bb9-4fa176500fec",
+      "alwaysOutputData": true,
+      "credentials": {
+        "slackApi": {
+          "id": "bjkWJ8RsJsiSs8D7",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C09U3C5L095",
+          "mode": "list",
+          "cachedResultName": "billing-team"
+        },
+        "text": "=📧 New Email Routed \n*From:*{{ $('Code in JavaScript').item.json.from }} \n*Subject:* {{ $('Code in JavaScript').item.json.subject }} \n*Body:* {{ $('Code in JavaScript').item.json.body }} \n*Predicted Team:* {{ $('HTTP Request').item.json.team }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        928,
+        256
+      ],
+      "id": "d1e187bb-e326-4ab7-bb40-b59c63b8b7ee",
+      "name": "Send a message3",
+      "webhookId": "28d5850a-5c79-4d3a-a894-3fa5fde2abb3",
+      "credentials": {
+        "slackApi": {
+          "id": "bjkWJ8RsJsiSs8D7",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.team }}",
+                    "rightValue": "Technical",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "27828e22-89dd-41bc-ab94-afeb20abd49f"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "technical-team"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "e6ed511f-0e64-41e7-a7c5-2591f3197d9c",
+                    "leftValue": "={{ $json.team }}",
+                    "rightValue": "Support",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "support-team"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "677e0798-83bd-4e53-a4ff-dd9005ea3167",
+                    "leftValue": "={{ $json.team }}",
+                    "rightValue": "Product",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "product-team"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "339be84f-ef52-444d-b444-50c7e4a734c4",
+                    "leftValue": "={{ $json.team }}",
+                    "rightValue": "Billing",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "billing-team"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        624,
+        0
+      ],
+      "id": "a1165515-067e-4843-9d91-e6caf318ce48",
+      "name": "Switch1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch1": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "3aa11cdf-0ff9-42a2-a184-20ac279ec1b5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2c39cf2b8f4ceccea81cdfdb6ff434685c0d5117b0b19cf8e3f2fb9da574bb79"
+  },
+  "id": "i6lmTGjOVchEVYjm",
+  "tags": []
+}
