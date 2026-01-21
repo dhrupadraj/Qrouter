@@ -3,6 +3,7 @@
 Automatically classify and route incoming Gmail messages to teams using a DQN Reinforcement Learning model, FastAPI backend, and n8n automation.
 
 Use this link to try out the n8n workflow: http://localhost:5678/workflow/i6lmTGjOVchEVYjm
+Make changes according to the nodes corresponding to your gmail
 
 🚀 Overview
 
