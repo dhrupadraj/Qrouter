@@ -1,3 +1,10 @@
 numpy
 pandas
 scikit-learn
+matplotlib
+torch
+sentence-transformers
+tqdm
+fastapi
+uvicorn[standard]
+python-multipart

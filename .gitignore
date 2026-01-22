@@ -1,0 +1,6 @@
+venv/
+__pycache__/
+*.pyc
+models/dqn.pth
+models/q_table.pkl
+artifacts/
